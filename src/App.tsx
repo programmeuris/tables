@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, CircleStop, X } from "lucide-react";
 
 import { Numpad } from "@/components/Numpad";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -135,6 +136,15 @@ export default function App() {
 
   const handleClear = useCallback(() => setInput(""), []);
 
+  // Stop the current run: cancel the timer and return to the empty state
+  // without recording anything for the exercise that was on screen.
+  const handleStop = useCallback(() => {
+    setExercise(null);
+    setInput("");
+    setFeedback(null);
+    startTimeRef.current = null;
+  }, []);
+
   // Physical keyboard support for convenience on desktop.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -156,10 +166,23 @@ export default function App() {
   return (
     <main className="flex min-h-[100dvh] items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm">
-        <CardHeader className="pb-4">
+        <CardHeader className="relative pb-4">
           <CardTitle className="text-center text-sm font-medium text-muted-foreground">
             Multiplication Tables
           </CardTitle>
+          {exercise && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleStop}
+              className="absolute right-3 top-3 h-7 gap-1 px-2 text-muted-foreground hover:text-destructive"
+              aria-label="Stop and discard the current exercise"
+            >
+              <CircleStop className="!size-4" />
+              Stop
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex h-14 items-center justify-center">

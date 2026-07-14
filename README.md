@@ -8,9 +8,13 @@ and deployed to **GitHub Pages**.
 ## How it works
 
 - The page opens empty. Pressing **=** reveals the first random exercise
-  (anywhere from `1 × 1` to `12 × 12`).
+  (anywhere from `2 × 2` to `12 × 12`). `×1` and `1×` exercises are left out —
+  they are trivial and add little practice value.
 - Enter the answer on the calculator-style numpad (or with your physical
   keyboard) and press **=** to check it. The next exercise appears immediately.
+- Press **Stop** at any time to cancel the current run. The timer is discarded
+  and nothing is recorded for the exercise on screen; the page returns to its
+  empty state.
 - Every submission is stored locally in **IndexedDB**: the exercise, whether the
   answer was correct, and how long it took from the moment the exercise was
   shown until it was submitted.
