@@ -6,7 +6,7 @@ export interface Exercise {
 }
 
 /** Lowest and highest factor practised. */
-export const MIN_FACTOR = 1;
+export const MIN_FACTOR = 2;
 export const MAX_FACTOR = 12;
 
 /** Stable string key for an exercise, e.g. "7x8". */
@@ -14,7 +14,11 @@ export function exerciseKey(a: number, b: number): string {
   return `${a}x${b}`;
 }
 
-/** Every exercise from MIN_FACTOR×MIN_FACTOR up to MAX_FACTOR×MAX_FACTOR. */
+/**
+ * Every exercise from MIN_FACTOR×MIN_FACTOR up to MAX_FACTOR×MAX_FACTOR.
+ * ×1 (and 1×) exercises are intentionally excluded — they are trivial and add
+ * little practice value, so factors start at 2.
+ */
 export function allExercises(): Exercise[] {
   const exercises: Exercise[] = [];
   for (let a = MIN_FACTOR; a <= MAX_FACTOR; a++) {
