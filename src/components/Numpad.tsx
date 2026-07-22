@@ -1,12 +1,14 @@
 import { Delete, Equal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface NumpadProps {
   onDigit: (digit: number) => void;
   onClear: () => void;
   onBackspace: () => void;
   onSubmit: () => void;
+  className?: string;
 }
 
 const DIGIT_ROWS = [
@@ -15,25 +17,35 @@ const DIGIT_ROWS = [
   [1, 2, 3],
 ];
 
+const KEY_CLASS =
+  "h-full min-h-0 w-full text-2xl font-semibold sm:text-3xl active:brightness-90";
+
 /**
  * A calculator-style numpad: digits 7-9 / 4-6 / 1-3, then Clear / 0 / Delete,
- * with a full-width submit ("=") key beneath.
+ * with a full-width submit ("=") key beneath. The grid stretches to fill the
+ * height of its container so the keys grow with the available screen space.
  */
 export function Numpad({
   onDigit,
   onClear,
   onBackspace,
   onSubmit,
+  className,
 }: NumpadProps) {
   return (
-    <div className="grid grid-cols-3 gap-2 sm:gap-3">
+    <div
+      className={cn(
+        "grid grid-cols-3 grid-rows-[repeat(5,minmax(0,1fr))] gap-2 sm:gap-3",
+        className
+      )}
+    >
       {DIGIT_ROWS.flat().map((digit) => (
         <Button
           key={digit}
           type="button"
           variant="secondary"
           onClick={() => onDigit(digit)}
-          className="h-16 text-2xl font-semibold sm:h-20"
+          className={KEY_CLASS}
           aria-label={`Digit ${digit}`}
         >
           {digit}
@@ -44,7 +56,7 @@ export function Numpad({
         type="button"
         variant="outline"
         onClick={onClear}
-        className="h-16 text-base font-semibold sm:h-20"
+        className={cn(KEY_CLASS, "text-lg")}
         aria-label="Clear"
       >
         C
@@ -54,7 +66,7 @@ export function Numpad({
         type="button"
         variant="secondary"
         onClick={() => onDigit(0)}
-        className="h-16 text-2xl font-semibold sm:h-20"
+        className={KEY_CLASS}
         aria-label="Digit 0"
       >
         0
@@ -64,19 +76,19 @@ export function Numpad({
         type="button"
         variant="outline"
         onClick={onBackspace}
-        className="h-16 sm:h-20"
+        className={KEY_CLASS}
         aria-label="Delete"
       >
-        <Delete className="!size-6" />
+        <Delete className="!size-7" />
       </Button>
 
       <Button
         type="button"
         onClick={onSubmit}
-        className="col-span-3 h-16 text-2xl font-bold sm:h-20"
+        className={cn(KEY_CLASS, "col-span-3 font-bold")}
         aria-label="Submit answer"
       >
-        <Equal className="!size-7" />
+        <Equal className="!size-8" />
       </Button>
     </div>
   );
