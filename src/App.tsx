@@ -3,13 +3,8 @@ import { Check, CircleStop, X } from "lucide-react";
 
 import { Numpad } from "@/components/Numpad";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { cn, vibrate } from "@/lib/utils";
 import { addSubmission, getAllSubmissions, type Submission } from "@/lib/db";
 import {
   exerciseKey,
@@ -18,6 +13,12 @@ import {
 } from "@/lib/exercises";
 
 const MAX_INPUT_LENGTH = 3;
+
+// Haptic patterns (ms). A plain tap for key presses, a short pulse for a
+// correct answer, and a stronger double-buzz for a wrong one.
+const TAP = 10;
+const CORRECT_BUZZ = 18;
+const WRONG_BUZZ = [25, 40, 25];
 
 interface Feedback {
   correct: boolean;
@@ -90,13 +91,17 @@ export default function App() {
     // First press (or after returning to the page): reveal the first exercise
     // without recording anything.
     if (!exercise || startTimeRef.current === null) {
+      vibrate(TAP);
       setFeedback(null);
       startExercise();
       return;
     }
 
     // Ignore an empty submission so a stray "=" doesn't score a wrong answer.
-    if (input.length === 0) return;
+    if (input.length === 0) {
+      vibrate(TAP);
+      return;
+    }
 
     const given = Number(input);
     const answer = exercise.a * exercise.b;
@@ -115,6 +120,7 @@ export default function App() {
     historyRef.current = [...historyRef.current, submission];
     void addSubmission(submission);
 
+    vibrate(correct ? CORRECT_BUZZ : WRONG_BUZZ);
     showFeedback({ correct, answer });
     startExercise(exerciseKey(exercise.a, exercise.b));
   }, [exercise, input, startExercise, showFeedback]);
@@ -122,6 +128,7 @@ export default function App() {
   const handleDigit = useCallback(
     (digit: number) => {
       if (!exercise) return;
+      vibrate(TAP);
       setFeedback(null);
       setInput((prev) =>
         prev.length >= MAX_INPUT_LENGTH ? prev : prev + String(digit)
@@ -131,14 +138,19 @@ export default function App() {
   );
 
   const handleBackspace = useCallback(() => {
+    vibrate(TAP);
     setInput((prev) => prev.slice(0, -1));
   }, []);
 
-  const handleClear = useCallback(() => setInput(""), []);
+  const handleClear = useCallback(() => {
+    vibrate(TAP);
+    setInput("");
+  }, []);
 
   // Stop the current run: cancel the timer and return to the empty state
   // without recording anything for the exercise that was on screen.
   const handleStop = useCallback(() => {
+    vibrate(TAP);
     setExercise(null);
     setInput("");
     setFeedback(null);
@@ -164,43 +176,44 @@ export default function App() {
   }, [handleDigit, handleBackspace, handleSubmit, handleClear]);
 
   return (
-    <main className="flex min-h-[100dvh] items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="relative pb-4">
-          <CardTitle className="text-center text-sm font-medium text-muted-foreground">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background">
+      <main className="flex h-[100dvh] max-h-[920px] w-full max-w-md flex-col gap-3 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))]">
+        {/* Top bar: title and, during a run, the Stop button. */}
+        <div className="flex h-9 shrink-0 items-center justify-between">
+          <span className="text-sm font-medium text-muted-foreground">
             Multiplication Tables
-          </CardTitle>
+          </span>
           {exercise && (
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={handleStop}
-              className="absolute right-3 top-3 h-7 gap-1 px-2 text-muted-foreground hover:text-destructive"
+              className="h-8 gap-1 px-2 text-muted-foreground hover:text-destructive"
               aria-label="Stop and discard the current exercise"
             >
               <CircleStop className="!size-4" />
               Stop
             </Button>
           )}
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex h-14 items-center justify-center">
-            {exercise ? (
-              <p
-                className="text-4xl font-bold tabular-nums"
-                aria-live="polite"
-              >
-                {exercise.a} &times; {exercise.b}
-              </p>
-            ) : (
-              <p className="text-center text-base text-muted-foreground">
-                Press = to start
-              </p>
-            )}
-          </div>
+        </div>
 
-          {/* Feedback for the previous answer; fixed height avoids layout shift. */}
+        {/* Exercise + feedback, centered in the space above the numpad. */}
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3">
+          {exercise ? (
+            <p
+              className="text-6xl font-bold tabular-nums sm:text-7xl"
+              aria-live="polite"
+            >
+              {exercise.a} <span className="text-muted-foreground">&times;</span>{" "}
+              {exercise.b}
+            </p>
+          ) : (
+            <p className="text-center text-lg text-muted-foreground">
+              Press = to start
+            </p>
+          )}
+
           <div
             className="flex h-6 items-center justify-center text-sm font-medium"
             aria-live="polite"
@@ -216,24 +229,33 @@ export default function App() {
                 </span>
               ))}
           </div>
+        </div>
 
-          <Input
-            readOnly
-            inputMode="none"
-            value={input}
-            placeholder="0"
-            aria-label="Your answer"
-            className="h-16 bg-muted/40 text-right font-mono !text-4xl tabular-nums"
-          />
+        {/* Answer display. Border flashes green/red with the last result. */}
+        <Input
+          readOnly
+          inputMode="none"
+          value={input}
+          placeholder="0"
+          aria-label="Your answer"
+          className={cn(
+            "h-16 shrink-0 bg-muted/40 text-right font-mono !text-4xl tabular-nums transition-colors",
+            feedback?.correct && "border-green-500",
+            feedback && !feedback.correct && "border-destructive"
+          )}
+        />
 
+        {/* Numpad fills the remaining height. */}
+        <div className="min-h-0 flex-[2] shrink-0">
           <Numpad
+            className="h-full"
             onDigit={handleDigit}
             onClear={handleClear}
             onBackspace={handleBackspace}
             onSubmit={handleSubmit}
           />
-        </CardContent>
-      </Card>
-    </main>
+        </div>
+      </main>
+    </div>
   );
 }
