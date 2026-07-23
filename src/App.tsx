@@ -4,7 +4,7 @@ import { Check, CircleStop, X } from "lucide-react";
 import { Numpad } from "@/components/Numpad";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn, vibrate } from "@/lib/utils";
+import { cn, haptic } from "@/lib/utils";
 import { addSubmission, getAllSubmissions, type Submission } from "@/lib/db";
 import {
   exerciseKey,
@@ -91,7 +91,7 @@ export default function App() {
     // First press (or after returning to the page): reveal the first exercise
     // without recording anything.
     if (!exercise || startTimeRef.current === null) {
-      vibrate(TAP);
+      haptic(TAP);
       setFeedback(null);
       startExercise();
       return;
@@ -99,7 +99,7 @@ export default function App() {
 
     // Ignore an empty submission so a stray "=" doesn't score a wrong answer.
     if (input.length === 0) {
-      vibrate(TAP);
+      haptic(TAP);
       return;
     }
 
@@ -120,7 +120,7 @@ export default function App() {
     historyRef.current = [...historyRef.current, submission];
     void addSubmission(submission);
 
-    vibrate(correct ? CORRECT_BUZZ : WRONG_BUZZ);
+    haptic(correct ? CORRECT_BUZZ : WRONG_BUZZ);
     showFeedback({ correct, answer });
     startExercise(exerciseKey(exercise.a, exercise.b));
   }, [exercise, input, startExercise, showFeedback]);
@@ -128,7 +128,7 @@ export default function App() {
   const handleDigit = useCallback(
     (digit: number) => {
       if (!exercise) return;
-      vibrate(TAP);
+      haptic(TAP);
       setFeedback(null);
       setInput((prev) =>
         prev.length >= MAX_INPUT_LENGTH ? prev : prev + String(digit)
@@ -138,19 +138,19 @@ export default function App() {
   );
 
   const handleBackspace = useCallback(() => {
-    vibrate(TAP);
+    haptic(TAP);
     setInput((prev) => prev.slice(0, -1));
   }, []);
 
   const handleClear = useCallback(() => {
-    vibrate(TAP);
+    haptic(TAP);
     setInput("");
   }, []);
 
   // Stop the current run: cancel the timer and return to the empty state
   // without recording anything for the exercise that was on screen.
   const handleStop = useCallback(() => {
-    vibrate(TAP);
+    haptic(TAP);
     setExercise(null);
     setInput("");
     setFeedback(null);
